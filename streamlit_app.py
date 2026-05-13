@@ -182,8 +182,8 @@ if archivo is not None:
             return pd.DataFrame(resultados)
 
     def asignar_ascendente(
-    df_resultado,
-    df_original
+        df_resultado,
+        df_original
 ):
 
     # ----------------------------------------
@@ -316,7 +316,7 @@ if archivo is not None:
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
 
-    except Exception as e:
+except Exception as e:
 
         st.error("Ocurrió un error ❌")
 
