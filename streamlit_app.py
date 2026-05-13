@@ -181,30 +181,30 @@ if archivo is not None:
 
             return pd.DataFrame(resultados)
 
-        def asignar_ascendente(
-                df_resultado,
-                df_original
-            ):
+       def asignar_ascendente(
+    df_resultado,
+    df_original
+):
 
     # ----------------------------------------
     # IDENTIFICAR SUPERVISORES
     # ----------------------------------------
 
-                supervisores = df_original[
+    supervisores = df_original[
         "Cedula Supervisor"
-                ].dropna().unique()
+    ].dropna().unique()
 
-                resultados_ascendentes = []
+    resultados_ascendentes = []
 
     # ----------------------------------------
-    # RECORRER CADA SUPERVISOR
+    # RECORRER SUPERVISORES
     # ----------------------------------------
 
-        for supervisor in supervisores:
+    for supervisor in supervisores:
 
-        # Buscar nombre supervisor
-         info_supervisor = df_original[
-        df_original["Cedula"] == supervisor
+        # Buscar información supervisor
+        info_supervisor = df_original[
+            df_original["Cedula"] == supervisor
         ]
 
         if info_supervisor.empty:
@@ -214,9 +214,9 @@ if archivo is not None:
             "Nombre Completo"
         ].values[0]
 
-        # Buscar equipo del supervisor
+        # Buscar equipo
         equipo = df_original[
-        df_original["Cedula Supervisor"] == supervisor
+            df_original["Cedula Supervisor"] == supervisor
         ]
 
         evaluadores_ids = equipo[
@@ -243,10 +243,19 @@ if archivo is not None:
 
         resultados_ascendentes.append(fila)
 
+    # Crear dataframe
     df_ascendentes = pd.DataFrame(
         resultados_ascendentes
     )
 
+    # Unir al resultado final
+    df_final = df_resultado.merge(
+        df_ascendentes,
+        on="Cedula Supervisor",
+        how="left"
+    )
+
+    return df_final
     # ----------------------------------------
     # UNIR CON RESULTADO PRINCIPAL
     # ----------------------------------------
