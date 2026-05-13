@@ -181,7 +181,7 @@ if archivo is not None:
 
             return pd.DataFrame(resultados)
 
-       def asignar_ascendente(
+        def asignar_ascendente(
     df_resultado,
     df_original
 ):
