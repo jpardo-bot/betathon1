@@ -240,31 +240,25 @@ if archivo is not None:
             st.dataframe(df_final)
 
             # ------------------------------------
-            # EXPORTAR
-            # ------------------------------------
+# EXPORTAR EXCEL
+# ------------------------------------
 
-            output = BytesIO()
+excel_buffer = BytesIO()
 
-            with pd.ExcelWriter(
-                output,
-                engine="openpyxl"
-            ) as writer:
+df_final.to_excel(
+    excel_buffer,
+    index=False,
+    engine="openpyxl"
+)
 
-                df_final.to_excel(
-                    writer,
-                    index=False,
-                    sheet_name="Evaluaciones"
-                )
+excel_buffer.seek(0)
 
-            output.seek(0)
-
-            st.download_button(
-                label="📥 Descargar Excel",
-                data=output,
-                file_name="evaluaciones.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-
+st.download_button(
+    label="📥 Descargar Excel",
+    data=excel_buffer,
+    file_name="evaluaciones.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
     except Exception as e:
 
         st.error("Ocurrió un error ❌")
