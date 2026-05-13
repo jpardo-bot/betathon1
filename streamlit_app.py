@@ -1,234 +1,108 @@
-import streamlit as st
-import pandas as pd
-import random
-from io import BytesIO
+def asignar_pares(df):
 
-st.set_page_config(
-    page_title="Lia by Buk",
-    layout="wide"
-)
+    resultados = []
 
-st.title("🤖 Lia by Buk, tu asignador Inteligente de Evaluadores")
+    for _, persona in df.iterrows():
 
-# ------------------------------------------------
-# CONFIGURACIÓN
-# ------------------------------------------------
+        cedula = persona["Cedula"]
+        nombre_completo = persona["Nombre Completo"]
+        area = persona["Área"]
+        cargo = persona["Cargo"]
+        cedula_supervisor = persona["Cedula Supervisor"]
 
-st.sidebar.header("⚙️ Configuración")
+        candidatos = df.copy()
 
-tipo_cruce = st.sidebar.selectbox(
-    "Tipo de asignación de pares",
-    ["Area", "Cargo"]
-)
+        # Evitar autoevaluación
+        candidatos = candidatos[
+            candidatos["Cedula"] != cedula
+        ]
 
-cantidad_pares = st.sidebar.number_input(
-    "Cantidad de pares por colaborador",
-    min_value=1,
-    max_value=100,
-    value=2
-)
+        # Filtro principal
+        if tipo_cruce == "Area":
 
-excluir_mismo_jefe = st.sidebar.checkbox(
-    "Excluir personas del mismo jefe",
-    value=True
-)
-
-# ------------------------------------------------
-# SUBIR ARCHIVO
-# ------------------------------------------------
-
-archivo = st.file_uploader(
-    "📂 Sube archivo Excel",
-    type=["xlsx"]
-)
-
-if archivo:
-
-    df = pd.read_excel(
-    archivo,
-    engine="openpyxl"
-)
-
-    st.subheader("📊 Vista previa")
-    st.dataframe(df)
-
-    columnas_necesarias = [
-        "Cedula",
-        "Nombre Completo",
-        "Cargo",
-        "Área",
-        "Cedula Supervisor"
-    ]
-
-    faltantes = [
-        col for col in columnas_necesarias
-        if col not in df.columns
-    ]
-
-    if faltantes:
-        st.error(
-            f"Faltan columnas: {faltantes}"
-        )
-        st.stop()
-
-    # --------------------------------------------
-    # FUNCIÓN PARES
-    # --------------------------------------------
-
-    def asignar_pares(df):
-
-        resultados = []
-
-        for _, persona in df.iterrows():
-
-            Cedula = persona["Cedula"]
-            Nombre Completo = persona["Nombre"]
-            Área = persona["Area"]
-            Cargo = persona["Cargo"]
-            Cedula Supervisor = persona["Cedula_Jefe"]
-            
-
-            candidatos = df.copy()
-
-            # Evitar autoevaluación
             candidatos = candidatos[
-                candidatos["Cedula"] != cedula
+                candidatos["Área"] == area
             ]
 
-            # Filtro principal
-            if tipo_cruce == "Area":
+        else:
 
-                candidatos = candidatos[
-                    candidatos["Area"] == area
-                ]
-
-            else:
-
-                candidatos = candidatos[
-                    candidatos["Cargo"] == cargo
-                ]
-
-            # Excluir mismo jefe
-            if excluir_mismo_jefe:
-
-                candidatos = candidatos[
-                    candidatos["Cedula_Jefe"] != jefe
-                ]
-
-            # Mezclar aleatoriamente
-            candidatos = candidatos.sample(
-                frac=1,
-                random_state=random.randint(1, 100000)
-            )
-
-            seleccionados = candidatos.head(
-                cantidad_pares
-            )
-
-            evaluadores = seleccionados[
-                "Cedula"
-            ].tolist()
-
-            nombres = seleccionados[
-                "Nombre"
-            ].tolist()
-
-            # Completar espacios vacíos
-            while len(evaluadores) < cantidad_pares:
-                evaluadores.append("")
-                nombres.append("")
-
-            fila = {
-                "Cedula": cedula,
-                "Nombre": persona["Nombre"],
-                "Cargo": cargo,
-                "Area": area,
-                "Cedula_Jefe": jefe
-            }
-
-            # Crear columnas dinámicas
-            for i in range(cantidad_pares):
-
-                fila[f"Par_{i+1}_Cedula"] = evaluadores[i]
-                fila[f"Par_{i+1}_Nombre"] = nombres[i]
-
-            resultados.append(fila)
-
-        return pd.DataFrame(resultados)
-
-    # --------------------------------------------
-    # FUNCIÓN ASCENDENTE
-    # --------------------------------------------
-
-    def asignar_ascendente(df_resultado, df_original):
-
-        mapa_jefes = df_original[
-            [
-                "Cedula",
-                "Nombre"
+            candidatos = candidatos[
+                candidatos["Cargo"] == cargo
             ]
-        ].rename(
-            columns={
-                "Cedula": "Cedula_Jefe",
-                "Nombre": "Nombre_Jefe"
-            }
+
+        # Excluir mismo jefe
+        if excluir_mismo_jefe:
+
+            candidatos = candidatos[
+                candidatos["Cedula Supervisor"] != cedula_supervisor
+            ]
+
+        # Mezclar aleatoriamente
+        candidatos = candidatos.sample(
+            frac=1,
+            random_state=random.randint(1, 100000)
         )
 
-        df_resultado = df_resultado.merge(
-            mapa_jefes,
-            on="Cedula_Jefe",
-            how="left"
+        seleccionados = candidatos.head(
+            cantidad_pares
         )
 
-        df_resultado["Evaluador_Ascendente"] = \
-            df_resultado["Cedula_Jefe"]
+        evaluadores = seleccionados[
+            "Cedula"
+        ].tolist()
 
-        df_resultado["Nombre_Ascendente"] = \
-            df_resultado["Nombre_Jefe"]
+        nombres = seleccionados[
+            "Nombre Completo"
+        ].tolist()
 
-        return df_resultado
+        # Completar vacíos
+        while len(evaluadores) < cantidad_pares:
 
-    # --------------------------------------------
-    # GENERAR TODO
-    # --------------------------------------------
+            evaluadores.append("")
+            nombres.append("")
 
-    if st.button("✨ Generar Evaluaciones"):
+        fila = {
+            "Cedula": cedula,
+            "Nombre Completo": nombre_completo,
+            "Cargo": cargo,
+            "Área": area,
+            "Cedula Supervisor": cedula_supervisor
+        }
 
-        with st.spinner("Generando evaluadores..."):
+        # Crear columnas dinámicas
+        for i in range(cantidad_pares):
 
-            df_pares = asignar_pares(df)
+            fila[f"Par_{i+1}_Cedula"] = evaluadores[i]
+            fila[f"Par_{i+1}_Nombre"] = nombres[i]
 
-            df_final = asignar_ascendente(
-                df_pares,
-                df
-            )
+        resultados.append(fila)
 
-        st.success("La estructura de tu evaluación está lista 🚀")
+    return pd.DataFrame(resultados)
 
-        st.dataframe(df_final)
+def asignar_ascendente(df_resultado, df_original):
 
-        # ----------------------------------------
-        # EXPORTAR EXCEL
-        # ----------------------------------------
+    mapa_jefes = df_original[
+        [
+            "Cedula",
+            "Nombre Completo"
+        ]
+    ].rename(
+        columns={
+            "Cedula": "Cedula Supervisor",
+            "Nombre Completo": "Nombre Supervisor"
+        }
+    )
 
-        output = BytesIO()
+    df_resultado = df_resultado.merge(
+        mapa_jefes,
+        on="Cedula Supervisor",
+        how="left"
+    )
 
-        with pd.ExcelWriter(
-            output,
-            engine="openpyxl"
-        ) as writer:
+    df_resultado["Evaluador_Ascendente"] = \
+        df_resultado["Cedula Supervisor"]
 
-            df_final.to_excel(
-                writer,
-                index=False,
-                sheet_name="Estrucutra evaluación"
-            )
+    df_resultado["Nombre_Ascendente"] = \
+        df_resultado["Nombre Supervisor"]
 
-        output.seek(0)
-
-        st.download_button(
-            label="📥 Descargar Excel",
-            data=output,
-            file_name="evaluaciones_desempeno.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+    return df_resultado
