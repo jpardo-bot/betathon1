@@ -22,19 +22,19 @@ st.subheader("Asignador Inteligente de Evaluadores")
 st.sidebar.header("⚙️ Configuración")
 
 tipo_cruce = st.sidebar.selectbox(
-    "Tipo de asignación",
+    "Tipo de asignación de pares",
     ["Área", "Cargo"]
 )
 
 cantidad_pares = st.sidebar.number_input(
-    "Cantidad de pares",
+    "Cantidad de pares por colaborador",
     min_value=1,
     max_value=20,
     value=2
 )
 
 excluir_mismo_jefe = st.sidebar.checkbox(
-    "Excluir mismo supervisor",
+    "Excluir personas del mismo supervisor",
     value=True
 )
 
@@ -54,6 +54,10 @@ archivo = st.file_uploader(
 if archivo is not None:
 
     try:
+
+        # ----------------------------------------
+        # LEER EXCEL
+        # ----------------------------------------
 
         df = pd.read_excel(
             archivo,
@@ -113,7 +117,7 @@ if archivo is not None:
                     candidatos["Cedula"] != cedula
                 ]
 
-                # Filtro principal
+                # Filtrar por tipo
                 if tipo_cruce == "Área":
 
                     candidatos = candidatos[
@@ -138,6 +142,7 @@ if archivo is not None:
                     frac=1
                 )
 
+                # Seleccionar cantidad requerida
                 seleccionados = candidatos.head(
                     cantidad_pares
                 )
@@ -156,6 +161,7 @@ if archivo is not None:
                     evaluadores.append("")
                     nombres.append("")
 
+                # Crear fila base
                 fila = {
                     "Cedula": cedula,
                     "Nombre Completo": nombre,
@@ -203,13 +209,13 @@ if archivo is not None:
             )
 
             df_resultado[
-                "Evaluador_Ascendente"
+                "Evaluador Ascendente"
             ] = df_resultado[
                 "Cedula Supervisor"
             ]
 
             df_resultado[
-                "Nombre_Ascendente"
+                "Nombre Ascendente"
             ] = df_resultado[
                 "Nombre Supervisor"
             ]
@@ -217,7 +223,7 @@ if archivo is not None:
             return df_resultado
 
         # ----------------------------------------
-        # BOTÓN
+        # BOTÓN GENERAR
         # ----------------------------------------
 
         if st.button("✨ Generar Evaluaciones"):
@@ -226,41 +232,46 @@ if archivo is not None:
                 "Generando evaluaciones..."
             ):
 
+                # Generar pares
                 df_pares = asignar_pares(df)
 
+                # Generar ascendente
                 df_final = asignar_ascendente(
                     df_pares,
                     df
                 )
 
             st.success(
-                "Evaluaciones generadas 🚀"
+                "Evaluaciones generadas correctamente 🚀"
             )
+
+            st.subheader("📋 Resultado Final")
 
             st.dataframe(df_final)
 
             # ------------------------------------
-# EXPORTAR EXCEL
-# ------------------------------------
+            # EXPORTAR EXCEL
+            # ------------------------------------
 
-excel_buffer = BytesIO()
+            excel_buffer = BytesIO()
 
-df_final.to_excel(
-    excel_buffer,
-    index=False,
-    engine="openpyxl"
-)
+            df_final.to_excel(
+                excel_buffer,
+                index=False,
+                engine="openpyxl"
+            )
 
-excel_buffer.seek(0)
+            excel_buffer.seek(0)
 
-st.download_button(
-    label="📥 Descargar Excel",
-    data=excel_buffer,
-    file_name="evaluaciones.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
-st.write(df_final.shape)
+            st.download_button(
+                label="📥 Descargar Excel",
+                data=excel_buffer,
+                file_name="evaluaciones_desempeno.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+
     except Exception as e:
 
         st.error("Ocurrió un error ❌")
+
         st.code(str(e))
