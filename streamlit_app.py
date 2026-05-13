@@ -184,7 +184,7 @@ if archivo is not None:
 def asignar_ascendente(
         df_resultado,
         df_original
-):
+)
 
     # ----------------------------------------
     # IDENTIFICAR SUPERVISORES
