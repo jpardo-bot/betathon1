@@ -181,46 +181,83 @@ if archivo is not None:
 
             return pd.DataFrame(resultados)
 
-        # ----------------------------------------
-        # FUNCIÓN ASCENDENTE
-        # ----------------------------------------
+       def asignar_ascendente(
+    df_resultado,
+    df_original
+):
 
-        def asignar_ascendente(
-            df_resultado,
-            df_original
-        ):
+    # ----------------------------------------
+    # IDENTIFICAR SUPERVISORES
+    # ----------------------------------------
 
-            mapa_jefes = df_original[
-                [
-                    "Cedula",
-                    "Nombre Completo"
-                ]
-            ].rename(
-                columns={
-                    "Cedula": "Cedula Supervisor",
-                    "Nombre Completo": "Nombre Supervisor"
-                }
-            )
+    supervisores = df_original[
+        "Cedula Supervisor"
+    ].dropna().unique()
 
-            df_resultado = df_resultado.merge(
-                mapa_jefes,
-                on="Cedula Supervisor",
-                how="left"
-            )
+    resultados_ascendentes = []
 
-            df_resultado[
-                "Evaluador Ascendente"
-            ] = df_resultado[
-                "Cedula Supervisor"
-            ]
+    # ----------------------------------------
+    # RECORRER CADA SUPERVISOR
+    # ----------------------------------------
 
-            df_resultado[
-                "Nombre Ascendente"
-            ] = df_resultado[
-                "Nombre Supervisor"
-            ]
+    for supervisor in supervisores:
 
-            return df_resultado
+        # Buscar nombre supervisor
+        info_supervisor = df_original[
+            df_original["Cedula"] == supervisor
+        ]
+
+        if info_supervisor.empty:
+            continue
+
+        nombre_supervisor = info_supervisor[
+            "Nombre Completo"
+        ].values[0]
+
+        # Buscar equipo del supervisor
+        equipo = df_original[
+            df_original["Cedula Supervisor"] == supervisor
+        ]
+
+        evaluadores_ids = equipo[
+            "Cedula"
+        ].tolist()
+
+        evaluadores_nombres = equipo[
+            "Nombre Completo"
+        ].tolist()
+
+        fila = {
+            "Cedula Supervisor": supervisor,
+            "Nombre Supervisor": nombre_supervisor
+        }
+
+        # Crear columnas dinámicas
+        for i in range(len(evaluadores_ids)):
+
+            fila[f"Ascendente_{i+1}_Cedula"] = \
+                evaluadores_ids[i]
+
+            fila[f"Ascendente_{i+1}_Nombre"] = \
+                evaluadores_nombres[i]
+
+        resultados_ascendentes.append(fila)
+
+    df_ascendentes = pd.DataFrame(
+        resultados_ascendentes
+    )
+
+    # ----------------------------------------
+    # UNIR CON RESULTADO PRINCIPAL
+    # ----------------------------------------
+
+    df_final = df_resultado.merge(
+        df_ascendentes,
+        on="Cedula Supervisor",
+        how="left"
+    )
+
+    return df_final
 
         # ----------------------------------------
         # BOTÓN GENERAR
