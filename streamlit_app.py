@@ -182,25 +182,25 @@ if archivo is not None:
             return pd.DataFrame(resultados)
 
         def asignar_ascendente(
-    df_resultado,
-    df_original
-):
+                df_resultado,
+                df_original
+            ):
 
     # ----------------------------------------
     # IDENTIFICAR SUPERVISORES
     # ----------------------------------------
 
-    supervisores = df_original[
+                supervisores = df_original[
         "Cedula Supervisor"
-    ].dropna().unique()
+                ].dropna().unique()
 
-    resultados_ascendentes = []
+                resultados_ascendentes = []
 
     # ----------------------------------------
     # RECORRER CADA SUPERVISOR
     # ----------------------------------------
 
-    for supervisor in supervisores:
+        for supervisor in supervisores:
 
         # Buscar nombre supervisor
         info_supervisor = df_original[
