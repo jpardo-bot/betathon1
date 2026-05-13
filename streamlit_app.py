@@ -44,7 +44,10 @@ archivo = st.file_uploader(
 
 if archivo:
 
-    df = pd.read_excel(archivo)
+    df = pd.read_excel(
+    archivo,
+    engine="openpyxl"
+)
 
     st.subheader("📊 Vista previa")
     st.dataframe(df)
