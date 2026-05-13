@@ -53,11 +53,11 @@ if archivo:
     st.dataframe(df)
 
     columnas_necesarias = [
-        "Colaborador - Número de Documento",
-        "Colaborador - Nombre Completo",
-        "Trabajo - Cargo",
-        "Trabajo - Nombre Área",
-        "Trabajo - Número de Documento Supervisor"
+        "Cedula",
+        "Nombre Completo",
+        "Cargo",
+        "Área",
+        "Cedula Supervisor"
     ]
 
     faltantes = [
@@ -81,11 +81,11 @@ if archivo:
 
         for _, persona in df.iterrows():
 
-            Colaborador - Número de Documento = persona["Cedula"]
-            Colaborador - Nombre Completo = persona["Nombre"]
-            Trabajo - Nombre Área = persona["Area"]
-            Trabajo - Cargo = persona["Cargo"]
-            Trabajo - Número de Documento Supervisor = persona["Cedula_Jefe"]
+            Cedula = persona["Cedula"]
+            Nombre Completo = persona["Nombre"]
+            Área = persona["Area"]
+            Cargo = persona["Cargo"]
+            Cedula Supervisor = persona["Cedula_Jefe"]
             
 
             candidatos = df.copy()
