@@ -181,85 +181,53 @@ if archivo is not None:
 
             return pd.DataFrame(resultados)
 
-        # ----------------------------------------
+              # ----------------------------------------
         # FUNCIÓN ASCENDENTE
         # ----------------------------------------
 
-        def asignar_ascendente(
-            df_resultado,
-            df_original
-        ):
+        def asignar_ascendente(df_resultado, df_original):
 
-            # ----------------------------------------
-            # IDENTIFICAR SUPERVISORES
-            # ----------------------------------------
+            # Crear columnas vacías
+            df_resultado["Evaluadores Ascendentes"] = ""
+            df_resultado["Nombres Ascendentes"] = ""
 
+            # Obtener supervisores únicos
             supervisores = df_original[
                 "Cedula Supervisor"
             ].dropna().unique()
 
-            resultados_ascendentes = []
-
-            # ----------------------------------------
-            # RECORRER SUPERVISORES
-            # ----------------------------------------
-
             for supervisor in supervisores:
 
-                # Buscar información supervisor
-                info_supervisor = df_original[
-                    df_original["Cedula"] == supervisor
-                ]
-
-                if info_supervisor.empty:
-                    continue
-
-                nombre_supervisor = info_supervisor[
-                    "Nombre Completo"
-                ].values[0]
-
-                # Buscar equipo
+                # Buscar colaboradores del supervisor
                 equipo = df_original[
                     df_original["Cedula Supervisor"] == supervisor
                 ]
 
-                evaluadores_ids = equipo[
+                ids_equipo = equipo[
                     "Cedula"
-                ].tolist()
+                ].astype(str).tolist()
 
-                evaluadores_nombres = equipo[
+                nombres_equipo = equipo[
                     "Nombre Completo"
                 ].tolist()
 
-                fila = {
-                    "Cedula Supervisor": supervisor,
-                    "Nombre Supervisor": nombre_supervisor
-                }
+                # Convertir a texto separado por coma
+                ids_texto = ", ".join(ids_equipo)
 
-                # Crear columnas dinámicas
-                for i in range(len(evaluadores_ids)):
+                nombres_texto = ", ".join(nombres_equipo)
 
-                    fila[f"Ascendente_{i+1}_Cedula"] = \
-                        evaluadores_ids[i]
+                # Asignar SOLO al supervisor
+                df_resultado.loc[
+                    df_resultado["Cedula"] == supervisor,
+                    "Evaluadores Ascendentes"
+                ] = ids_texto
 
-                    fila[f"Ascendente_{i+1}_Nombre"] = \
-                        evaluadores_nombres[i]
+                df_resultado.loc[
+                    df_resultado["Cedula"] == supervisor,
+                    "Nombres Ascendentes"
+                ] = nombres_texto
 
-                resultados_ascendentes.append(fila)
-
-            # Crear dataframe
-            df_ascendentes = pd.DataFrame(
-                resultados_ascendentes
-            )
-
-            # Unir resultado
-            df_final = df_resultado.merge(
-                df_ascendentes,
-                on="Cedula Supervisor",
-                how="left"
-            )
-
-            return df_final
+            return df_resultado
 
         # ----------------------------------------
         # BOTÓN GENERAR
