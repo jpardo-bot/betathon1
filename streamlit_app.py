@@ -259,6 +259,7 @@ st.download_button(
     file_name="evaluaciones.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
+st.write(df_final.shape)
     except Exception as e:
 
         st.error("Ocurrió un error ❌")
