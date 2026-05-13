@@ -8,7 +8,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🤖 Asignador Inteligente de Evaluadores")
+st.title("🤖 Lia by Buk, tu asignador Inteligente de Evaluadores")
 
 # ------------------------------------------------
 # CONFIGURACIÓN
@@ -53,11 +53,11 @@ if archivo:
     st.dataframe(df)
 
     columnas_necesarias = [
-        "Cedula",
-        "Nombre",
-        "Cargo",
-        "Area",
-        "Cedula_Jefe"
+        "Colaborador - Número de Documento",
+        "Colaborador - Nombre Completo",
+        "Trabajo - Cargo",
+        "Trabajo - Nombre Área",
+        "Trabajo - Número de Documento Supervisor"
     ]
 
     faltantes = [
@@ -81,10 +81,12 @@ if archivo:
 
         for _, persona in df.iterrows():
 
-            cedula = persona["Cedula"]
-            area = persona["Area"]
-            cargo = persona["Cargo"]
-            jefe = persona["Cedula_Jefe"]
+            Colaborador - Número de Documento = persona["Cedula"]
+            Colaborador - Nombre Completo = persona["Nombre"]
+            Trabajo - Nombre Área = persona["Area"]
+            Trabajo - Cargo = persona["Cargo"]
+            Trabajo - Número de Documento Supervisor = persona["Cedula_Jefe"]
+            
 
             candidatos = df.copy()
 
