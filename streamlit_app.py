@@ -203,7 +203,7 @@ if archivo is not None:
         for supervisor in supervisores:
 
         # Buscar nombre supervisor
-        info_supervisor = df_original[
+         info_supervisor = df_original[
         df_original["Cedula"] == supervisor
         ]
 
