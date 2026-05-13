@@ -204,7 +204,7 @@ if archivo is not None:
 
         # Buscar nombre supervisor
         info_supervisor = df_original[
-            df_original["Cedula"] == supervisor
+        df_original["Cedula"] == supervisor
         ]
 
         if info_supervisor.empty:
@@ -216,7 +216,7 @@ if archivo is not None:
 
         # Buscar equipo del supervisor
         equipo = df_original[
-            df_original["Cedula Supervisor"] == supervisor
+        df_original["Cedula Supervisor"] == supervisor
         ]
 
         evaluadores_ids = equipo[
