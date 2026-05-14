@@ -27,7 +27,14 @@ tipo_cruce = st.sidebar.selectbox(
 )
 
 cantidad_pares = st.sidebar.number_input(
-    "Cantidad de pares por colaborador",
+    "Cantidad de evaluadores paralelos",
+    min_value=1,
+    max_value=10,
+    value=2
+)
+
+cantidad_ascendentes = st.sidebar.number_input(
+    "Cantidad de evaluadores ascendentes",
     min_value=1,
     max_value=10,
     value=2
@@ -153,19 +160,19 @@ if archivo is not None:
                     "Cedula"
                 ].tolist()
 
-                # Completar vacíos si faltan personas
+                # Completar vacíos
                 while len(evaluadores) < cantidad_pares:
 
                     evaluadores.append("")
 
-                # Crear fila base
+                # Crear fila
                 fila = {
                     "Cedula": cedula,
                     "Nombre Completo": nombre,
                     "Cedula Supervisor": supervisor
                 }
 
-                # Crear columnas dinámicas pares
+                # Crear columnas dinámicas
                 for i in range(cantidad_pares):
 
                     fila[f"Par_{i+1}"] = evaluadores[i]
@@ -191,17 +198,33 @@ if archivo is not None:
             # Recorrer supervisores
             for supervisor in supervisores:
 
-                # Buscar equipo del supervisor
+                # Buscar equipo
                 equipo = df_original[
                     df_original["Cedula Supervisor"] == supervisor
                 ]
+
+                # Aleatorizar equipo
+                equipo = equipo.sample(
+                    frac=1,
+                    random_state=random.randint(1, 100000)
+                )
+
+                # Seleccionar cantidad requerida
+                equipo = equipo.head(
+                    cantidad_ascendentes
+                )
 
                 ids_equipo = equipo[
                     "Cedula"
                 ].tolist()
 
+                # Completar vacíos
+                while len(ids_equipo) < cantidad_ascendentes:
+
+                    ids_equipo.append("")
+
                 # Crear columnas dinámicas
-                for i in range(len(ids_equipo)):
+                for i in range(cantidad_ascendentes):
 
                     columna = f"Ascendente_{i+1}"
 
@@ -245,31 +268,27 @@ if archivo is not None:
 
             }
 
-            # Renombrar pares dinámicos
+            # Pares
             for i in range(cantidad_pares):
 
                 columnas_rename[
                     f"Par_{i+1}"
                 ] = f"Evaluador Paralelo {i+1}"
 
-            # Renombrar ascendentes dinámicos
-            columnas_ascendentes = [
-                col for col in df_final.columns
-                if "Ascendente_" in col
-            ]
-
-            for idx, col in enumerate(columnas_ascendentes):
+            # Ascendentes
+            for i in range(cantidad_ascendentes):
 
                 columnas_rename[
-                    col
-                ] = f"Evaluador Ascendente {idx+1}"
+                    f"Ascendente_{i+1}"
+                ] = f"Evaluador Ascendente {i+1}"
 
+            # Aplicar rename
             df_final = df_final.rename(
                 columns=columnas_rename
             )
 
             # ------------------------------------
-            # DEJAR SOLO COLUMNAS NECESARIAS
+            # COLUMNAS FINALES
             # ------------------------------------
 
             columnas_finales = [
@@ -281,19 +300,25 @@ if archivo is not None:
                 "Evaluador Descendente"
             ]
 
-            # Agregar pares dinámicos
+            # Agregar paralelos
             for i in range(cantidad_pares):
 
                 columnas_finales.append(
                     f"Evaluador Paralelo {i+1}"
                 )
 
-            # Agregar ascendentes dinámicos
-            for idx, col in enumerate(columnas_ascendentes):
+            # Agregar ascendentes
+            for i in range(cantidad_ascendentes):
 
                 columnas_finales.append(
-                    f"Evaluador Ascendente {idx+1}"
+                    f"Evaluador Ascendente {i+1}"
                 )
+
+            # Filtrar columnas existentes
+            columnas_finales = [
+                col for col in columnas_finales
+                if col in df_final.columns
+            ]
 
             df_final = df_final[
                 columnas_finales
