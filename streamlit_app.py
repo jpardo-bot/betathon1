@@ -16,12 +16,20 @@ st.set_page_config(
 # LOGO
 # ------------------------------------------------
 
-st.sidebar.image(
-    "logo.png",
-    width=180
-)
+try:
+    st.sidebar.image(
+        "logo.png",
+        width=180
+    )
+except:
+    pass
+
+# ------------------------------------------------
+# TÍTULOS
+# ------------------------------------------------
 
 st.title("🤖 Lia by Buk")
+st.subheader("Asignador Inteligente de Evaluadores")
 
 # ------------------------------------------------
 # SIDEBAR
@@ -247,7 +255,11 @@ if archivo is not None:
         # BOTÓN GENERAR
         # ----------------------------------------
 
-        if st.button("✨ Generar Evaluaciones"):
+        generar = st.button(
+            "✨ Generar Evaluaciones"
+        )
+
+        if generar:
 
             with st.spinner(
                 "Generando evaluaciones..."
@@ -276,14 +288,14 @@ if archivo is not None:
 
             }
 
-            # Pares
+            # Renombrar pares
             for i in range(cantidad_pares):
 
                 columnas_rename[
                     f"Par_{i+1}"
                 ] = f"Evaluador Paralelo {i+1}"
 
-            # Ascendentes
+            # Renombrar ascendentes
             for i in range(cantidad_ascendentes):
 
                 columnas_rename[
@@ -328,6 +340,7 @@ if archivo is not None:
                 if col in df_final.columns
             ]
 
+            # Dejar solo columnas necesarias
             df_final = df_final[
                 columnas_finales
             ]
