@@ -29,7 +29,7 @@ tipo_cruce = st.sidebar.selectbox(
 cantidad_pares = st.sidebar.number_input(
     "Cantidad de pares por colaborador",
     min_value=1,
-    max_value=20,
+    max_value=10,
     value=2
 )
 
@@ -43,7 +43,7 @@ excluir_mismo_jefe = st.sidebar.checkbox(
 # ------------------------------------------------
 
 archivo = st.file_uploader(
-    "📂 Sube archivo Excel",
+    "📂 Sube tu archivo Excel",
     type=["xlsx"]
 )
 
@@ -66,7 +66,8 @@ if archivo is not None:
 
         st.success("Archivo cargado correctamente ✅")
 
-        st.subheader("📊 Vista previa")
+        st.subheader("📊 Vista previa del archivo")
+
         st.dataframe(df)
 
         # ----------------------------------------
@@ -89,7 +90,7 @@ if archivo is not None:
         if faltantes:
 
             st.error(
-                f"Faltan columnas: {faltantes}"
+                f"Faltan columnas obligatorias: {faltantes}"
             )
 
             st.stop()
@@ -117,7 +118,7 @@ if archivo is not None:
                     candidatos["Cedula"] != cedula
                 ]
 
-                # Filtrar por tipo
+                # Filtrar por área o cargo
                 if tipo_cruce == "Área":
 
                     candidatos = candidatos[
@@ -139,10 +140,11 @@ if archivo is not None:
 
                 # Aleatorizar
                 candidatos = candidatos.sample(
-                    frac=1
+                    frac=1,
+                    random_state=random.randint(1, 100000)
                 )
 
-                # Seleccionar cantidad requerida
+                # Seleccionar pares
                 seleccionados = candidatos.head(
                     cantidad_pares
                 )
@@ -151,81 +153,62 @@ if archivo is not None:
                     "Cedula"
                 ].tolist()
 
-                nombres = seleccionados[
-                    "Nombre Completo"
-                ].tolist()
-
-                # Completar vacíos
+                # Completar vacíos si faltan personas
                 while len(evaluadores) < cantidad_pares:
 
                     evaluadores.append("")
-                    nombres.append("")
 
                 # Crear fila base
                 fila = {
                     "Cedula": cedula,
                     "Nombre Completo": nombre,
-                    "Cargo": cargo,
-                    "Área": area,
                     "Cedula Supervisor": supervisor
                 }
 
-                # Crear columnas dinámicas
+                # Crear columnas dinámicas pares
                 for i in range(cantidad_pares):
 
-                    fila[f"Par_{i+1}_Cedula"] = evaluadores[i]
-
-                    fila[f"Par_{i+1}_Nombre"] = nombres[i]
+                    fila[f"Par_{i+1}"] = evaluadores[i]
 
                 resultados.append(fila)
 
             return pd.DataFrame(resultados)
 
-              # ----------------------------------------
+        # ----------------------------------------
         # FUNCIÓN ASCENDENTE
         # ----------------------------------------
 
-        def asignar_ascendente(df_resultado, df_original):
-
-            # Crear columnas vacías
-            df_resultado["Evaluadores Ascendentes"] = ""
-            df_resultado["Nombres Ascendentes"] = ""
+        def asignar_ascendente(
+            df_resultado,
+            df_original
+        ):
 
             # Obtener supervisores únicos
             supervisores = df_original[
                 "Cedula Supervisor"
             ].dropna().unique()
 
+            # Recorrer supervisores
             for supervisor in supervisores:
 
-                # Buscar colaboradores del supervisor
+                # Buscar equipo del supervisor
                 equipo = df_original[
                     df_original["Cedula Supervisor"] == supervisor
                 ]
 
                 ids_equipo = equipo[
                     "Cedula"
-                ].astype(str).tolist()
-
-                nombres_equipo = equipo[
-                    "Nombre Completo"
                 ].tolist()
 
-                # Convertir a texto separado por coma
-                ids_texto = ", ".join(ids_equipo)
+                # Crear columnas dinámicas
+                for i in range(len(ids_equipo)):
 
-                nombres_texto = ", ".join(nombres_equipo)
+                    columna = f"Ascendente_{i+1}"
 
-                # Asignar SOLO al supervisor
-                df_resultado.loc[
-                    df_resultado["Cedula"] == supervisor,
-                    "Evaluadores Ascendentes"
-                ] = ids_texto
-
-                df_resultado.loc[
-                    df_resultado["Cedula"] == supervisor,
-                    "Nombres Ascendentes"
-                ] = nombres_texto
+                    df_resultado.loc[
+                        df_resultado["Cedula"] == supervisor,
+                        columna
+                    ] = ids_equipo[i]
 
             return df_resultado
 
@@ -242,11 +225,83 @@ if archivo is not None:
                 # Generar pares
                 df_pares = asignar_pares(df)
 
-                # Generar ascendente
+                # Generar ascendentes
                 df_final = asignar_ascendente(
                     df_pares,
                     df
                 )
+
+            # ------------------------------------
+            # RENOMBRAR COLUMNAS
+            # ------------------------------------
+
+            columnas_rename = {
+
+                "Cedula": "Número de Documento",
+
+                "Nombre Completo": "Nombre Colaborador",
+
+                "Cedula Supervisor": "Evaluador Descendente"
+
+            }
+
+            # Renombrar pares dinámicos
+            for i in range(cantidad_pares):
+
+                columnas_rename[
+                    f"Par_{i+1}"
+                ] = f"Evaluador Paralelo {i+1}"
+
+            # Renombrar ascendentes dinámicos
+            columnas_ascendentes = [
+                col for col in df_final.columns
+                if "Ascendente_" in col
+            ]
+
+            for idx, col in enumerate(columnas_ascendentes):
+
+                columnas_rename[
+                    col
+                ] = f"Evaluador Ascendente {idx+1}"
+
+            df_final = df_final.rename(
+                columns=columnas_rename
+            )
+
+            # ------------------------------------
+            # DEJAR SOLO COLUMNAS NECESARIAS
+            # ------------------------------------
+
+            columnas_finales = [
+
+                "Número de Documento",
+
+                "Nombre Colaborador",
+
+                "Evaluador Descendente"
+            ]
+
+            # Agregar pares dinámicos
+            for i in range(cantidad_pares):
+
+                columnas_finales.append(
+                    f"Evaluador Paralelo {i+1}"
+                )
+
+            # Agregar ascendentes dinámicos
+            for idx, col in enumerate(columnas_ascendentes):
+
+                columnas_finales.append(
+                    f"Evaluador Ascendente {idx+1}"
+                )
+
+            df_final = df_final[
+                columnas_finales
+            ]
+
+            # ------------------------------------
+            # MOSTRAR RESULTADO
+            # ------------------------------------
 
             st.success(
                 "Evaluaciones generadas correctamente 🚀"
@@ -255,29 +310,7 @@ if archivo is not None:
             st.subheader("📋 Resultado Final")
 
             st.dataframe(df_final)
-            
-            # ------------------------------------
-            # RENOMBRAR COLUMNAS FINALES
-            # ------------------------------------
 
-            df_final = df_final.rename(
-                columns={
-
-                    "Cedula": "Número de Documento",
-
-                    "Nombre Completo": "Nombre Colaborador",
-
-                    "Cedula Supervisor": "Evaluador descendente",
-
-                    "Par_1_Cedula": "Evaluador paralelo 1",
-
-                    "Par_2_Cedula": "Evaluador paralelo 2",
-
-                    "Evaluadores Ascendentes": "Evaluador ascendente",
-
-        
-                }
-            )
             # ------------------------------------
             # EXPORTAR EXCEL
             # ------------------------------------
