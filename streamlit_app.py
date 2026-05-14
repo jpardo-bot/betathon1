@@ -17,7 +17,7 @@ st.set_page_config(
 # ------------------------------------------------
 
 st.sidebar.image(
-    "logo.png.jpg",
+    "logo.png",
     width=180
 )
 
