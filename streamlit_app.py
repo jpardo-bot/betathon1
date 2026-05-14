@@ -74,7 +74,7 @@ if archivo is not None:
             st.error(f"Faltan columnas obligatorias. Asegúrate de que el archivo tenga: {columnas_req}")
             st.stop()
 
-        if st.button("🎄 Generar árbol de relaciones"):
+        if st.button("✨ Generar estructura"):
             with st.spinner("Lia está validando jerarquías y asignando..."):
                 
                 # --- TRATAMIENTO DE JEFE DIRECTO (DESCENDENTE) ---
@@ -152,7 +152,6 @@ if archivo is not None:
 
             st.success("¡Estrucutra generada con éxito! 🚀")
             st.markdown("### 📊 Resultado Final")
-            st.info("Recuerda que si generaste múltiples formularios debes asignarlos en este tempalte antes de cargarlo a Buk")
             st.dataframe(df_export)
 
             excel_buffer = BytesIO()
