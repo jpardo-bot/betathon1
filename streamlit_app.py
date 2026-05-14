@@ -22,7 +22,7 @@ except:
 # ------------------------------------------------
 # TÍTULOS
 # ------------------------------------------------
-st.title("🤖 Lia by Buk")
+st.title("💜 Lia by Buk")
 st.subheader("Asignador Inteligente de Evaluadores")
 
 # ------------------------------------------------
