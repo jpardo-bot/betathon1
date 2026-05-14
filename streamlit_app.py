@@ -255,7 +255,29 @@ if archivo is not None:
             st.subheader("📋 Resultado Final")
 
             st.dataframe(df_final)
+            
+            # ------------------------------------
+            # RENOMBRAR COLUMNAS FINALES
+            # ------------------------------------
 
+            df_final = df_final.rename(
+                columns={
+
+                    "Cedula": "Número de Documento",
+
+                    "Nombre Completo": "Nombre Colaborador",
+
+                    "Cedula Supervisor": "Evaluador descendente",
+
+                    "Par_1_Cedula": "Evaluador paralelo 1",
+
+                    "Par_2_Cedula": "Evaluador paralelo 2",
+
+                    "Evaluadores Ascendentes": "Evaluador ascendente",
+
+        
+                }
+            )
             # ------------------------------------
             # EXPORTAR EXCEL
             # ------------------------------------
