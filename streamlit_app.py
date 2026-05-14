@@ -65,7 +65,6 @@ if archivo is not None:
 
         # --- SECCIÓN DE PREVISUALIZACIÓN (EL CAMBIO SOLICITADO) ---
         st.markdown("### 🔍 Previsualización de los datos cargados")
-        st.info("Revisa que las columnas y los datos aparezcan correctamente abajo antes de generar las evaluaciones.")
         st.dataframe(df) # Aquí se muestra el archivo completo que acabas de subir
         st.divider()
         # ---------------------------------------------------------
@@ -141,7 +140,6 @@ if archivo is not None:
                 "Evaluador Descendente Final": "Evaluador Descendente"
             }
 
-            if incluir_auto: rename_dict["Autoevaluacion_ID"] = "Autoevaluación"
             if incluir_pares:
                 for i in range(cantidad_pares):
                     rename_dict[f"Par_{i+1}"] = f"Evaluador Paralelo {i+1}"
@@ -154,6 +152,7 @@ if archivo is not None:
 
             st.success("¡Estrucutra generada con éxito! 🚀")
             st.markdown("### 📊 Resultado Final")
+            st.info("Recuerda que si generaste múltiples formularios debes asignarlos en este tempalte antes de cargarlo a Buk")
             st.dataframe(df_export)
 
             excel_buffer = BytesIO()
