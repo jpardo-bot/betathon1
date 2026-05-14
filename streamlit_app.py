@@ -12,7 +12,7 @@ st.set_page_config(
 )
 
 # ------------------------------------------------
-# LOGO (Manteniendo tu estructura original)
+# LOGO 
 # ------------------------------------------------
 try:
     st.sidebar.image("logo.png", width=180)
@@ -30,61 +30,60 @@ st.subheader("Asignador Inteligente de Evaluadores")
 # ------------------------------------------------
 st.sidebar.header("⚙️ Configuración")
 
+# 1. Autoevaluación
+incluir_auto = st.sidebar.toggle("👤 Incluir Autoevaluación", value=True)
+
 st.sidebar.divider()
 
-# 1. Configuración de Pares
+# 2. Pares
 incluir_pares = st.sidebar.toggle("👥 Incluir Evaluadores Pares", value=True)
 if incluir_pares:
-    tipo_cruce = st.sidebar.selectbox(
-        "Tipo de asignación de pares",
-        ["Área", "Cargo"]
-    )
-    cantidad_pares = st.sidebar.number_input(
-        "Cantidad de pares",
-        min_value=1, max_value=10, value=2
-    )
-    excluir_mismo_jefe = st.sidebar.checkbox(
-        "Excluir personas del mismo supervisor",
-        value=True
-    )
+    tipo_cruce = st.sidebar.selectbox("Tipo de asignación de pares", ["Área", "Cargo"])
+    cantidad_pares = st.sidebar.number_input("Cantidad de pares", 1, 10, 2)
+    excluir_mismo_jefe = st.sidebar.checkbox("Excluir mismo supervisor", value=True)
 
 st.sidebar.divider()
 
-# 2. Configuración de Ascendentes
+# 3. Ascendentes
 incluir_ascendentes = st.sidebar.toggle("⬆️ Incluir Evaluadores Ascendentes", value=False)
 if incluir_ascendentes:
-    cantidad_ascendentes = st.sidebar.number_input(
-        "Cantidad de ascendentes",
-        min_value=1, max_value=10, value=2
-    )
+    cantidad_ascendentes = st.sidebar.number_input("Cantidad de ascendentes", 1, 10, 2)
 
 # ------------------------------------------------
-# SUBIR ARCHIVO
+# PROCESAMIENTO
 # ------------------------------------------------
 archivo = st.file_uploader("📂 Sube tu archivo Excel", type=["xlsx"])
 
 if archivo is not None:
     try:
         df = pd.read_excel(archivo, engine="openpyxl")
+        
+        # Limpieza básica de datos (quitar espacios en blanco)
+        df["Cedula"] = df["Cedula"].astype(str).str.strip()
+        df["Cedula Supervisor"] = df["Cedula Supervisor"].astype(str).str.strip()
+
         st.success("Archivo cargado correctamente ✅")
         
-        # Validar columnas necesarias
         columnas_req = ["Cedula", "Nombre Completo", "Cargo", "Área", "Cedula Supervisor"]
-        faltantes = [col for col in columnas_req if col not in df.columns]
-
-        if faltantes:
-            st.error(f"Faltan columnas obligatorias: {faltantes}")
+        if not all(col in df.columns for col in columnas_req):
+            st.error(f"Faltan columnas obligatorias.")
             st.stop()
 
-        st.subheader("📊 Vista previa de datos")
-        st.dataframe(df.head(5))
-
         if st.button("✨ Generar Evaluaciones"):
-            with st.spinner("Lia está trabajando en las asignaciones..."):
+            with st.spinner("Lia está validando jerarquías y asignando..."):
                 
-                # Base del DataFrame final
-                df_final = df[["Cedula", "Nombre Completo", "Cedula Supervisor"]].copy()
+                # --- TRATAMIENTO DE JEFE DIRECTO (DESCENDENTE) ---
+                # Si la cédula es igual a la del supervisor, ponemos "No Aplica"
+                df["Evaluador Descendente Final"] = df.apply(
+                    lambda x: "No Aplica" if x["Cedula"] == x["Cedula Supervisor"] else x["Cedula Supervisor"],
+                    axis=1
+                )
 
+                df_final = df[["Cedula", "Nombre Completo", "Evaluador Descendente Final"]].copy()
+
+                # --- LÓGICA AUTOEVALUACIÓN ---
+                if incluir_auto:
+                    df_final["Autoevaluacion_ID"] = df["Cedula"]
 
                 # --- LÓGICA PARES ---
                 if incluir_pares:
@@ -100,8 +99,13 @@ if archivo is not None:
                         if excluir_mismo_jefe:
                             candidatos = candidatos[candidatos["Cedula Supervisor"] != persona["Cedula Supervisor"]]
                         
-                        # Aleatorizar y seleccionar
-                        ids_pares = candidatos.sample(n=min(len(candidatos), cantidad_pares))["Cedula"].tolist()
+                        # Selección aleatoria segura
+                        n_a_seleccionar = min(len(candidatos), cantidad_pares)
+                        if n_a_seleccionar > 0:
+                            ids_pares = candidatos.sample(n=n_a_seleccionar)["Cedula"].tolist()
+                        else:
+                            ids_pares = []
+                            
                         while len(ids_pares) < cantidad_pares:
                             ids_pares.append("")
                         
@@ -110,65 +114,49 @@ if archivo is not None:
                             fila[f"Par_{i+1}"] = ids_pares[i]
                         pares_data.append(fila)
                     
-                    df_pares = pd.DataFrame(pares_data)
-                    df_final = df_final.merge(df_pares, on="Cedula", how="left")
+                    df_final = df_final.merge(pd.DataFrame(pares_data), on="Cedula", how="left")
 
                 # --- LÓGICA ASCENDENTES ---
                 if incluir_ascendentes:
-                    # Crear columnas vacías primero
                     for i in range(cantidad_ascendentes):
                         df_final[f"Asc_{i+1}"] = ""
                     
-                    supervisores = df["Cedula Supervisor"].dropna().unique()
+                    supervisores = df["Cedula Supervisor"].unique()
                     for sup in supervisores:
-                        equipo = df[df["Cedula Supervisor"] == sup]
+                        # Un supervisor no puede tener evaluación ascendente de sí mismo
+                        equipo = df[(df["Cedula Supervisor"] == sup) & (df["Cedula"] != sup)]
                         if not equipo.empty:
-                            ids_asc = equipo.sample(n=min(len(equipo), cantidad_ascendentes))["Cedula"].tolist()
+                            n_asc = min(len(equipo), cantidad_ascendentes)
+                            ids_asc = equipo.sample(n=n_asc)["Cedula"].tolist()
                             for idx, val in enumerate(ids_asc):
                                 df_final.loc[df_final["Cedula"] == sup, f"Asc_{idx+1}"] = val
 
             # ------------------------------------
-            # RENOMBRAR Y FILTRAR COLUMNAS FINALES
+            # RENOMBRAR Y COLUMNAS FINALES
             # ------------------------------------
-            
-            # Diccionario base de renombramiento
             rename_dict = {
                 "Cedula": "Número de Documento",
                 "Nombre Completo": "Nombre Colaborador",
-                "Cedula Supervisor": "Evaluador Descendente"
+                "Evaluador Descendente Final": "Evaluador Descendente"
             }
 
-
+            if incluir_auto: rename_dict["Autoevaluacion_ID"] = "Autoevaluación"
             if incluir_pares:
                 for i in range(cantidad_pares):
                     rename_dict[f"Par_{i+1}"] = f"Evaluador Paralelo {i+1}"
-
             if incluir_ascendentes:
                 for i in range(cantidad_ascendentes):
                     rename_dict[f"Asc_{i+1}"] = f"Evaluador Ascendente {i+1}"
 
-            # Aplicar cambios
             df_export = df_final.rename(columns=rename_dict)
-            
-            # Seleccionar solo las columnas que fueron renombradas (las que el usuario eligió)
-            columnas_finales = list(rename_dict.values())
-            df_export = df_export[columnas_finales]
+            df_export = df_export[list(rename_dict.values())]
 
-            st.success("¡Evaluaciones generadas! 🚀")
-            st.subheader("📋 Resultado Final")
+            st.success("¡Evaluaciones generadas con éxito! 🚀")
             st.dataframe(df_export)
 
-            # EXPORTACIÓN
             excel_buffer = BytesIO()
             df_export.to_excel(excel_buffer, index=False, engine="openpyxl")
-            excel_buffer.seek(0)
-
-            st.download_button(
-                label="📥 Descargar Excel Final",
-                data=excel_buffer,
-                file_name="matriz_evaluaciones_buk.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+            st.download_button("📥 Descargar Excel", excel_buffer.getvalue(), "evaluaciones_desempeno.xlsx")
 
     except Exception as e:
-        st.error(f"Hubo un problema técnico: {e}")
+        st.error(f"Error: {e}")
