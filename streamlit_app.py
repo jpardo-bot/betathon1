@@ -12,8 +12,16 @@ st.set_page_config(
     layout="wide"
 )
 
+# ------------------------------------------------
+# LOGO
+# ------------------------------------------------
+
+st.sidebar.image(
+    "logo.png",
+    width=180
+)
+
 st.title("🤖 Lia by Buk")
-st.subheader("Asignador Inteligente de Evaluadores")
 
 # ------------------------------------------------
 # SIDEBAR
