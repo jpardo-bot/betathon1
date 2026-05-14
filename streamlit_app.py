@@ -30,12 +30,9 @@ st.subheader("Asignador Inteligente de Evaluadores")
 # ------------------------------------------------
 st.sidebar.header("⚙️ Configuración")
 
-# 1. Configuración de Autoevaluación
-incluir_auto = st.sidebar.toggle("👤 Incluir Autoevaluación", value=True)
-
 st.sidebar.divider()
 
-# 2. Configuración de Pares
+# 1. Configuración de Pares
 incluir_pares = st.sidebar.toggle("👥 Incluir Evaluadores Pares", value=True)
 if incluir_pares:
     tipo_cruce = st.sidebar.selectbox(
@@ -53,7 +50,7 @@ if incluir_pares:
 
 st.sidebar.divider()
 
-# 3. Configuración de Ascendentes
+# 2. Configuración de Ascendentes
 incluir_ascendentes = st.sidebar.toggle("⬆️ Incluir Evaluadores Ascendentes", value=False)
 if incluir_ascendentes:
     cantidad_ascendentes = st.sidebar.number_input(
@@ -88,9 +85,6 @@ if archivo is not None:
                 # Base del DataFrame final
                 df_final = df[["Cedula", "Nombre Completo", "Cedula Supervisor"]].copy()
 
-                # --- LÓGICA AUTOEVALUACIÓN ---
-                if incluir_auto:
-                    df_final["Autoevaluacion_ID"] = df_final["Cedula"]
 
                 # --- LÓGICA PARES ---
                 if incluir_pares:
@@ -144,8 +138,6 @@ if archivo is not None:
                 "Cedula Supervisor": "Evaluador Descendente"
             }
 
-            if incluir_auto:
-                rename_dict["Autoevaluacion_ID"] = "Autoevaluación"
 
             if incluir_pares:
                 for i in range(cantidad_pares):
