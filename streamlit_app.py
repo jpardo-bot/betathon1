@@ -30,12 +30,10 @@ st.subheader("Asignador Inteligente de Evaluadores")
 # ------------------------------------------------
 st.sidebar.header("⚙️ Configuración")
 
-# 1. Autoevaluación
-incluir_auto = st.sidebar.toggle("👤 Incluir Autoevaluación", value=True)
 
 st.sidebar.divider()
 
-# 2. Pares
+# 1. Pares
 incluir_pares = st.sidebar.toggle("👥 Incluir Evaluadores Pares", value=True)
 if incluir_pares:
     tipo_cruce = st.sidebar.selectbox("Tipo de asignación de pares", ["Área", "Cargo"])
@@ -44,7 +42,7 @@ if incluir_pares:
 
 st.sidebar.divider()
 
-# 3. Ascendentes
+# 2. Ascendentes
 incluir_ascendentes = st.sidebar.toggle("⬆️ Incluir Evaluadores Ascendentes", value=False)
 if incluir_ascendentes:
     cantidad_ascendentes = st.sidebar.number_input("Cantidad de ascendentes", 1, 10, 2)
@@ -56,6 +54,7 @@ archivo = st.file_uploader("📂 Sube tu archivo Excel", type=["xlsx"])
 
 if archivo is not None:
     try:
+        # Cargamos el archivo
         df = pd.read_excel(archivo, engine="openpyxl")
         
         # Limpieza básica de datos (quitar espacios en blanco)
@@ -63,17 +62,23 @@ if archivo is not None:
         df["Cedula Supervisor"] = df["Cedula Supervisor"].astype(str).str.strip()
 
         st.success("Archivo cargado correctamente ✅")
+
+        # --- SECCIÓN DE PREVISUALIZACIÓN (EL CAMBIO SOLICITADO) ---
+        st.markdown("### 🔍 Previsualización de los datos cargados")
+        st.info("Revisa que las columnas y los datos aparezcan correctamente abajo antes de generar las evaluaciones.")
+        st.dataframe(df) # Aquí se muestra el archivo completo que acabas de subir
+        st.divider()
+        # ---------------------------------------------------------
         
         columnas_req = ["Cedula", "Nombre Completo", "Cargo", "Área", "Cedula Supervisor"]
         if not all(col in df.columns for col in columnas_req):
-            st.error(f"Faltan columnas obligatorias.")
+            st.error(f"Faltan columnas obligatorias. Asegúrate de que el archivo tenga: {columnas_req}")
             st.stop()
 
-        if st.button("✨ Generar Evaluaciones"):
+        if st.button("🎄 Generar árbol de relaciones"):
             with st.spinner("Lia está validando jerarquías y asignando..."):
                 
                 # --- TRATAMIENTO DE JEFE DIRECTO (DESCENDENTE) ---
-                # Si la cédula es igual a la del supervisor, ponemos "No Aplica"
                 df["Evaluador Descendente Final"] = df.apply(
                     lambda x: "No Aplica" if x["Cedula"] == x["Cedula Supervisor"] else x["Cedula Supervisor"],
                     axis=1
@@ -81,9 +86,6 @@ if archivo is not None:
 
                 df_final = df[["Cedula", "Nombre Completo", "Evaluador Descendente Final"]].copy()
 
-                # --- LÓGICA AUTOEVALUACIÓN ---
-                if incluir_auto:
-                    df_final["Autoevaluacion_ID"] = df["Cedula"]
 
                 # --- LÓGICA PARES ---
                 if incluir_pares:
@@ -123,7 +125,6 @@ if archivo is not None:
                     
                     supervisores = df["Cedula Supervisor"].unique()
                     for sup in supervisores:
-                        # Un supervisor no puede tener evaluación ascendente de sí mismo
                         equipo = df[(df["Cedula Supervisor"] == sup) & (df["Cedula"] != sup)]
                         if not equipo.empty:
                             n_asc = min(len(equipo), cantidad_ascendentes)
@@ -151,7 +152,8 @@ if archivo is not None:
             df_export = df_final.rename(columns=rename_dict)
             df_export = df_export[list(rename_dict.values())]
 
-            st.success("¡Evaluaciones generadas con éxito! 🚀")
+            st.success("¡Estrucutra generada con éxito! 🚀")
+            st.markdown("### 📊 Resultado Final")
             st.dataframe(df_export)
 
             excel_buffer = BytesIO()
@@ -159,4 +161,4 @@ if archivo is not None:
             st.download_button("📥 Descargar Excel", excel_buffer.getvalue(), "evaluaciones_desempeno.xlsx")
 
     except Exception as e:
-        st.error(f"Error: {e}")
+        st.error(f"Se produjo un error al procesar el archivo: {e}")
